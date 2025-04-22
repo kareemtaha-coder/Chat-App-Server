@@ -1,43 +1,52 @@
-
-using Chat_App.Api.Data;
+﻿using Chat_App.Api.Data;
+using Chat_App.Api.Entities;
+using Chat_App.Api.GraphQl;
 using Microsoft.EntityFrameworkCore;
 
-namespace Chat_App.Api
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+builder.Services.AddDbContext<DataContext>(options =>
 {
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
 
-            // Add services to the container.
+builder.Services.AddCors();
 
-            builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-            builder.Services.AddDbContext<DataContext>(options =>
-            {
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-            });
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
-            app.UseHttpsRedirection();
-
-            app.UseAuthorization();
+// GraphQL configuration
+builder.Services
+    .AddGraphQLServer()
+    .AddQueryType<Query>()
+    .AddType<AppUser>() // 👈 Needed
+    .AddProjections()
+    .AddFiltering()
+    .AddSorting();
 
 
-            app.MapControllers();
+var app = builder.Build();
 
-            app.Run();
-        }
-    }
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+
+app.UseHttpsRedirection();
+app.UseAuthorization();
+
+app.UseCors(options =>
+{
+    options.AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader();
+});
+
+// Map controllers and GraphQL endpoint
+app.MapControllers();
+app.MapGraphQL(); // Default path: /graphql
+
+app.Run();

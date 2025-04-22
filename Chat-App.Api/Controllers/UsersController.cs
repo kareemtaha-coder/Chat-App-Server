@@ -8,7 +8,7 @@ namespace Chat_App.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController(DataContext context) : ControllerBase
+    public class UsersController(DataContext context) : BaseApiController
     {
         private readonly DataContext _context = context;
 
